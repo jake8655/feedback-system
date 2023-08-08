@@ -8,16 +8,84 @@ import {
   Events,
   REST,
   Routes,
+  EmbedBuilder,
+  Colors,
+  type TextChannel,
 } from 'discord.js';
 import { env } from './env/env';
+
+const scriptNames = ['ws_voucher', 'ws_shoprobbery', 'ws_moneywash'] as const;
 
 const commands = [
   {
     data: new SlashCommandBuilder()
       .setName('feedback')
-      .setDescription('Provide feedback to the developers!'),
+      .setDescription('Provide feedback to the developers!')
+      .addStringOption(option =>
+        option
+          .setName('script')
+          .setDescription(
+            'The name of the script you are providing feedback for',
+          )
+          .addChoices(
+            ...scriptNames.map(script_name => ({
+              name: script_name,
+              value: script_name,
+            })),
+          )
+          .setRequired(true),
+      )
+      .addStringOption(option =>
+        option
+          .setName('feedback')
+          .setDescription('Your feedback')
+          .setRequired(true),
+      )
+      .addIntegerOption(option =>
+        option
+          .setName('rating')
+          .setDescription('Your rating for the script')
+          .addChoices(
+            ...Array.from({ length: 5 }, (_, i) => i + 1).map(i => ({
+              name: i.toString(),
+              value: i,
+            })),
+          )
+          .setRequired(true),
+      ),
     async execute(interaction: CommandInteraction) {
-      await interaction.reply('hehehehaa!');
+      await (client.channels.cache.get(env.CHANNEL_ID) as TextChannel).send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`${interaction.user.username} - Feedback`)
+            .setDescription(
+              `**Script Name**: ${
+                interaction.options.get('script')?.value as string
+              }\n**Feedback**: ${
+                interaction.options.get('feedback')?.value as string
+              }\n**Rating**: \`${
+                interaction.options.get('rating')?.value as number
+              }⭐️ / 5⭐️\``,
+            )
+            .setTimestamp()
+            .setThumbnail(env.GUILD_ICON)
+            .setColor(Colors.Blue),
+        ],
+      });
+
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Feedback System')
+            .setDescription('Feedback successfully sent!')
+            .setFooter({
+              text: 'Thank you for your feedback!',
+              iconURL: env.GUILD_ICON,
+            })
+            .setColor(Colors.Green),
+        ],
+        ephemeral: true,
+      });
     },
   },
 ];
